@@ -209,7 +209,7 @@
                     projectDetails.innerHTML = details || '<p>No project details available.</p>';
 
                     // Uncomment the line below to see the raw data in the modal
-                    projectDetails.innerHTML = `<pre>${JSON.stringify(data.data, null, 2)}</pre>`;
+                    // projectDetails.innerHTML = `<pre>${JSON.stringify(data.data, null, 2)}</pre>`;
                   })
                   .catch(err => {
                     console.error('Error fetching project details:', err);
