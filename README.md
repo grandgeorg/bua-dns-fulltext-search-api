@@ -188,4 +188,4 @@ MIT License
 
 ## Author
 
-Grandgeorg Websolutions, Viktor Grandgeorg <viktor@grandgeorg.de>
+Grandgeorg Websolutions, Viktor Grandgeorg
