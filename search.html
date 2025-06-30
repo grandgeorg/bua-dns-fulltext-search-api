@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f4f4f4;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+    }
+    h1 {
+      color: #333;
+    }
+    input[type="text"] {
+      width: 300px;
+      padding: 10px;
+      margin-right: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #218838;
+    }
+    .result-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 16px;
+      color: #333;
+      background-color: #f9f9f9;
+      font-family: Arial, sans-serif;
+      margin-top: 10px;
+      margin-bottom: 10px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+
+    }
+    .result-item:hover {
+      background-color: #e0e0e0;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 20px 0;
+      background-color: rgba(0,0,0,0.5);
+    }
+    .modal-content {
+      background-color: #fefefe;
+      /* margin: 15% auto; */
+      padding: 20px;
+      margin-bottom: 40px;
+      border-radius: 5px;
+      width: 80%;
+    }
+    #closeModal {
+      float: right;
+    }
+    #loading {
+      display: none;
+      font-size: 18px;
+      color: #555;
+    }
+    #error {
+      display: none;
+      color: red;
+      margin-top: 10px;
+    }
+    #results {
+      margin-top: 20px;
+    }
+    .result-item:hover {
+      background-color: #e0e0e0;
+    }
+    span.id {
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+    span.score {
+      font-size: 0.85rem;
+      color: #333;
+    }
+    hr {
+      margin: 10px 0;
+      border: 0;
+      border-top: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h1>Search Projects</h1>
+    <p>Type a keyword in the search box below to find projects.</p>
+    <input type="text" id="searchInputDe" placeholder="Search in German...">
+    <input type="text" id="searchInputEn" placeholder="Search in English...">
+    <button id="searchButton">Search</button>
+    <div id="loading">Loading...</div>
+    <div id="error"></div>
+    <div id="results"></div>
+  </div>
+  <div id="modal" class="modal">
+    <div class="modal-content">
+      <h2>Project Details</h2>
+      <div id="projectDetails"></div>
+      <button id="closeModal">Close</button>
+    </div>
+  </div>
+  <script>
+
+    // add search input for german to app
+    const app = document.getElementById('app');
+    const searchInputDe = document.getElementById('searchInputDe');
+    const searchInputEn = document.getElementById('searchInputEn');
+    const searchButton = document.getElementById('searchButton');
+    const loading = document.getElementById('loading');
+    const errorDiv = document.getElementById('error');
+    const resultsDiv = document.getElementById('results');
+
+    searchButton.addEventListener('click', async () => {
+      const queryDe = searchInputDe.value.trim();
+      const queryEn = searchInputEn.value.trim();
+
+      if (!queryDe && !queryEn) {
+        errorDiv.textContent = 'Please enter a search term.';
+        return;
+      }
+
+      errorDiv.textContent = '';
+      resultsDiv.innerHTML = '';
+      loading.style.display = 'block';
+
+      try {
+        const responses = await Promise.all([
+          queryDe ? fetch(`/api/de?q=${encodeURIComponent(queryDe)}`) : null,
+          queryEn ? fetch(`/api/en?q=${encodeURIComponent(queryEn)}`) : null
+        ]);
+
+        const results = await Promise.all(responses.map(response => response ? response.json() : []));
+        results.forEach((result, index) => {
+          if (result.length > 0) {
+            const lang = index === 0 ? 'German' : 'English';
+            const resultDiv = document.createElement('div');
+            resultDiv.innerHTML = `<h2>Results in ${lang}:</h2>`;
+            result.forEach(item => {
+              const itemDiv = document.createElement('div');
+              itemDiv.className = 'result-item';
+              itemDiv.innerHTML = `
+                <span class="id">${item.ref}</span>
+                <span class="score">${item.score}</span>
+              `;
+              itemDiv.addEventListener('click', () => {
+                const modal = document.getElementById('modal');
+                const url = `https://sammlungsportal.bua-dns.de/items/projects/${item.ref}?fields=*,translations.*,logos_coop_partners.*,images.directus_files_id.*,preview_image.*.*,cooperation_partners.institutions_id.name_short,cooperation_partners.institutions_id.logo&limit=-1`;
+                fetch(url)
+                  .then(response => response.json())
+                  .then(data => {
+                    const projectDetails = document.getElementById('projectDetails');
+                    const translations = data.data.translations || [];
+                    const details = translations.map(t => `
+                      <hr>
+                      <h3>${t.languages_code === 'de' ? 'German' : 'English'}</h3>
+                      <p><strong>Title:</strong> ${t.title}</p>
+                      <p><strong>Sub Line:</strong> ${t.sub_line}</p>
+                      <p><strong>Description:</strong></p><div>${t.description || 'No description available.'}</div>
+                      <p><strong>Sidebar Content:</strong></p><div> ${t.sidebar_content || 'None'}</div>
+                    `).join('');
+                    projectDetails.innerHTML = details || '<p>No project details available.</p>';
+
+                    // Uncomment the line below to see the raw data in the modal
+                    // projectDetails.textContent = JSON.stringify(data, null, 2);
+                  })
+                  .catch(err => {
+                    console.error('Error fetching project details:', err);
+                    projectDetails.textContent = 'Error loading project details.';
+                  });
+                modal.style.display = 'flex';
+                document.getElementById('closeModal').addEventListener('click', () => {
+                  modal.style.display = 'none';
+                });
+              });
+              resultDiv.appendChild(itemDiv);
+            });
+            resultsDiv.appendChild(resultDiv);
+          } else {
+            const noResultsDiv = document.createElement('div');
+            noResultsDiv.innerHTML = `<h2>No results found in ${index === 0 ? 'German' : 'English'}.</h2>`;
+            resultsDiv.appendChild(noResultsDiv);
+          }
+        });
+      } catch (error) {
+        console.error('Error fetching search results:', error);
+        errorDiv.textContent = 'An error occurred while fetching search results. Please try again later.';
+      } finally {
+        loading.style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>
