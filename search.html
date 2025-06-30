@@ -80,11 +80,19 @@
     }
     .modal-content {
       background-color: #fefefe;
-      /* margin: 15% auto; */
       padding: 20px;
       margin-bottom: 40px;
       border-radius: 5px;
       width: 80%;
+    }
+    @media (max-width: 768px) {
+      .modal-content {
+        width: 100%;
+      }
+      input[type="text"] {
+        width: 100%;
+        margin-bottom: 10px;
+      }
     }
     #closeModal {
       float: right;
@@ -95,7 +103,6 @@
       color: #555;
     }
     #error {
-      display: none;
       color: red;
       margin-top: 10px;
     }
@@ -117,6 +124,9 @@
       margin: 10px 0;
       border: 0;
       border-top: 1px solid #ccc;
+    }
+    pre {
+      white-space: break-spaces;
     }
   </style>
 </head>
@@ -140,7 +150,6 @@
   </div>
   <script>
 
-    // add search input for german to app
     const app = document.getElementById('app');
     const searchInputDe = document.getElementById('searchInputDe');
     const searchInputEn = document.getElementById('searchInputEn');
@@ -200,7 +209,7 @@
                     projectDetails.innerHTML = details || '<p>No project details available.</p>';
 
                     // Uncomment the line below to see the raw data in the modal
-                    // projectDetails.textContent = JSON.stringify(data, null, 2);
+                    projectDetails.innerHTML = `<pre>${JSON.stringify(data.data, null, 2)}</pre>`;
                   })
                   .catch(err => {
                     console.error('Error fetching project details:', err);
