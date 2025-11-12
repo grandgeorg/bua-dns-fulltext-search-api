@@ -14,7 +14,7 @@ if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
 }
 
-// fectch projects
+// fetch projects
 function fetchProjects() {
 
   const url =
